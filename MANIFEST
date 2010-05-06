@@ -1,3 +1,4 @@
+Changes
 MANIFEST
 META.yml
 Makefile.PL
@@ -5,3 +6,4 @@ README
 lib/Text/Split.pm
 t/01-basic.t
 t/02-slurp.t
+t/03-section.t

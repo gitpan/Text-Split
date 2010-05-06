@@ -23,7 +23,7 @@ my %WriteMakefileArgs = (
                                            },
                        'ABSTRACT' => 'Text splitting with fine-grained control',
                        'EXE_FILES' => [],
-                       'VERSION' => '0.0010',
+                       'VERSION' => '0.0011',
                        'PREREQ_PM' => {
                                         'Any::Moose' => '0'
                                       },

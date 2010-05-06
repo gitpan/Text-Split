@@ -1,6 +1,6 @@
 package Text::Split;
 BEGIN {
-  $Text::Split::VERSION = '0.0010';
+  $Text::Split::VERSION = '0.0011';
 }
 # ABSTRACT: Text splitting with fine-grained control
 
@@ -44,7 +44,7 @@ sub _ftail ($$) {
 
 sub parent {
     my $self = shift;
-    if ( my $parent = $_[0]->_parent ) { return $parent }
+    if ( my $parent = $self->_parent ) { return $parent }
     return $self; # We are the base (root) split
 }
 
@@ -53,7 +53,7 @@ sub is_root {
     return ! $self->_parent;
 }
 
-sub _chomp_or_chomped ($) {
+sub _chomped2chomp ($) {
     my $slurp = $_[0];
     $slurp->{chomp} = delete $slurp->{chomped} if
         exists $slurp->{chomped} && not exists $slurp->{chomp};
@@ -63,11 +63,11 @@ sub _parse_slurp ($@) {
     my $slurp = shift;
     my %slurp = @_; # Can/will be overidden
 
-    _chomp_or_chomped \%slurp;
+    _chomped2chomp \%slurp;
 
     if ( ref $slurp eq 'HASH' ) {
         $slurp = { %$slurp };
-        _chomp_or_chomped $slurp;
+        _chomped2chomp $slurp;
         %slurp = ( %slurp, %$slurp );
     }
     else {
@@ -105,13 +105,16 @@ sub split {
     return if $length <= $from; # Was already at end of data
 
     pos $data = $from;
-    return unless my @match = $$data =~ m/\G[[:ascii:]]*?($matcher)/;
-
+    return unless $$data =~ m/\G[[:ascii:]]*?($matcher)/mgc;
+    my @match = map { substr $$data, $-[$_], $+[$_] - $-[$_] } ( 0 .. -1 + scalar @- );
+    shift @match;
+    my $found = shift @match;
     my ( $mhead, $mtail ) = ( $-[1], $+[1] - 1 );
+
     my $head = _fhead $data, $mhead;
     my $tail = _ftail $data, $mtail;
 
-    my $found = shift @match;
+    # TODO This is hacky
     my @matched = @match;
 
     my $content = substr $$data, $head, 1 + $tail - $head;
@@ -124,25 +127,36 @@ sub split {
         default => $self->default,
     );
 
-    return $split unless wantarray && ( my $slurp = $given{slurp} );
+    return $split unless wantarray && ( my $slurp = delete $given{slurp} );
+    return ( $split, $split->slurp( $slurp, %given ) );
+}
 
+sub slurp {
+    my $self = shift;
+    my $slurp = 1;
+    $slurp = shift if @_ % 2; # Odd number of arguments
+    my %given = @_;
+
+    my $split = $self;
+
+    _chomped2chomp \%given;
     my %slurp = _parse_slurp $self->default->{slurp};
+    $slurp{chomp} = $given{chomp} if exists $given{chomp};
     %slurp = _parse_slurp $slurp, %slurp unless $slurp eq 1;
 
     my @content;
-    push @content, $self->content if $slurp{slurpl};
+    push @content, $self->parent->content if $slurp{slurpl};
     push @content, $split->preceding;
     push @content, $split->content if $slurp{slurpr};
 
-    if ( $slurp{wantlist} ) {
+    if ( wantarray && $slurp{wantlist} ) {
         @content = grep { $_ ne "\n" } split m/(\n)/, join '', @content;
         @content = map { "$_\n" } @content unless $slurp{chomp};
+        return @content;
     }
     else {
-        @content = ( join '', @content );
+        return join '', @content;
     }
-
-    return ( $split, @content );
 }
 
 sub preceding {
@@ -161,9 +175,11 @@ sub remaining {
     my $data = $self->data;
     return $$data if $self->is_root;
 
-    my $length = length( $$data ) - $self->tail + 1;
+    my $from = $self->tail + 1;
+
+    my $length = length( $$data ) - $from + 1;
     return '' unless $length;
-    return substr $$data, $self->tail + 1, $length;
+    return substr $$data, $from, $length;
 }
 sub re { return shift->remaining( @_ ) }
 
@@ -195,7 +211,7 @@ Text::Split - Text splitting with fine-grained control
 
 =head1 VERSION
 
-version 0.0010
+version 0.0011
 
 =head1 SYNOPSIS
 
