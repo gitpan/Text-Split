@@ -7,3 +7,4 @@ lib/Text/Split.pm
 t/01-basic.t
 t/02-slurp.t
 t/03-section.t
+t/04-trim.t
