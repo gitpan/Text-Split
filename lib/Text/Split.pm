@@ -1,6 +1,6 @@
 package Text::Split;
 BEGIN {
-  $Text::Split::VERSION = '0.0012';
+  $Text::Split::VERSION = '0.0013';
 }
 # ABSTRACT: Text splitting with fine-grained control
 
@@ -223,7 +223,7 @@ Text::Split - Text splitting with fine-grained control
 
 =head1 VERSION
 
-version 0.0012
+version 0.0013
 
 =head1 SYNOPSIS
 
@@ -264,7 +264,7 @@ C<$content> =
 
 With Text::Split, given a split in some text, you can access the text preceding and remaining the split. Consecutive splitting lets you slurp text from between splits (optionally including the text from the splits at either end).
 
-More documentation coming soon.
+This distribution is deprecated, and will be renamed to L<Text::Clip>
 
 =head1 AUTHOR
 
